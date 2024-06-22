@@ -1,0 +1,14 @@
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\bin\Debug\net7.0\MasterDistributedPiano.exe
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\bin\Debug\net7.0\MasterDistributedPiano.deps.json
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\bin\Debug\net7.0\MasterDistributedPiano.runtimeconfig.json
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\bin\Debug\net7.0\MasterDistributedPiano.dll
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\bin\Debug\net7.0\MasterDistributedPiano.pdb
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.GeneratedMSBuildEditorConfig.editorconfig
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.AssemblyInfoInputs.cache
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.AssemblyInfo.cs
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.csproj.CoreCompileInputs.cache
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.dll
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\refint\MasterDistributedPiano.dll
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.pdb
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\MasterDistributedPiano.genruntimeconfig.cache
+D:\RiderProjects\MasterDistributedPiano\MasterDistributedPiano\obj\Debug\net7.0\ref\MasterDistributedPiano.dll
