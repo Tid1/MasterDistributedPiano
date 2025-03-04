@@ -1,6 +1,6 @@
 ﻿namespace MasterDistributedPiano;
 
-public delegate void StartSignalHandler(long time);
+public delegate void StartSignalHandler();
 public delegate void MidiHandler(string pathToFile, string fileName = "midiFile");
 public delegate void OctaveHandler(int numOctavesPerClient);
 

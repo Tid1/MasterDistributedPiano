@@ -44,7 +44,7 @@ public class CommandLineInterface : IUserInput {
             Console.WriteLine("Parsed Input: " + parsedInput);
             switch (parsedInput) {
                 case "start":
-                    OnStartSignal?.Invoke(DateTime.Now.Ticks);
+                    OnStartSignal?.Invoke();
                     Console.WriteLine("Sending Start...");
                     break;
                 case "config":

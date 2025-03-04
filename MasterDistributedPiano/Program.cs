@@ -1,5 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Net.NetworkInformation;
 using MasterDistributedPiano;
 using MasterDistributedPiano.SuperColliderZeugs;
 using MasterDistributedPiano.SuperColliderZeugs.OSCData;
@@ -21,4 +22,3 @@ messageThree.Append(76);
 network.ReceiveKey(messageOne, null);
 network.ReceiveKey(messageTwo, null);
 network.ReceiveKey(messageThree, null);
-

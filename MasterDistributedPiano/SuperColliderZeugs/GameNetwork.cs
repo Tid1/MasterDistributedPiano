@@ -1,5 +1,7 @@
 ﻿namespace MasterDistributedPiano.SuperColliderZeugs;
 
+using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using OSCData;
@@ -15,11 +17,17 @@ public class GameNetwork {
     private static readonly IPEndPoint SUPERCOLLIDER_ENDPOINT = new IPEndPoint(IPAddress.Loopback, 57120); //25440
     
     private readonly OscDiscoveryClient discovery = new OscDiscoveryClient();
-    private readonly OscUdpClient oscClient = new OscUdpClient(IPAddress.Any);
+    private readonly OscUdpClient oscClient = new OscUdpClient(IPAddress.Any, true);
     private readonly OscUdpClient sc = new OscUdpClient(IPAddress.Loopback);
     private readonly OscTcpServer server = new OscTcpServer(IPAddress.Any);
     private readonly Dictionary<string, Action<OSCMessage, IPEndPoint>> routes = new();
     private readonly string lobbyName;
+
+    private volatile bool listening;
+    private static readonly TimeSpan TIMEOUT = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan CHECK_TIME = TimeSpan.FromSeconds(3);
+
+    private Thread rttThread;
 
     public GameNetwork(string lobbyName) {
         this.lobbyName = lobbyName;
@@ -28,7 +36,7 @@ public class GameNetwork {
         routes.Add("/keyOff", ReceiveKey);
         routes.Add("/join", ReceiveJoin);
         routes.Add("/point", ReceivePoints);
-        
+        routes.Add("/rtt/response", ReceiveRTTResponse);
         /*
         routes.Add("/start", ReceiveStartMusic);
         routes.Add("/config", ReceiveOctaveConfig);
@@ -41,11 +49,14 @@ public class GameNetwork {
     private void SetUpSockets() {
         oscClient.OnReceive += OnOSCReceive;
         server.OnMessageReceived += OnOSCReceive;
-
+        
         sc.Start();
         oscClient.Start();
         server.Start();
         discovery.Start(CreateDiscoveryInformation());
+        listening = true;
+        rttThread = new Thread(CheckRTT);
+        rttThread.Start();
     }
 
     private OSCMessage CreateDiscoveryInformation() {
@@ -72,10 +83,9 @@ public class GameNetwork {
         server.Send(message);
     }
     
-    public void SendStartMusic(long time) {
+    public void SendStartMusic() {
         OSCMessage message = new OSCMessage("/start");
-        message.Append(time);
-
+        
         server.Send(message);
     }
 
@@ -86,6 +96,19 @@ public class GameNetwork {
 
         server.Send(message, endPoint);
     }
+
+    private void SendRTTRequest(long rtt, int sequenceCounter, IPEndPoint client) {
+        OSCMessage message = new OSCMessage("/rtt/request");
+        message.Append(rtt);
+        message.Append(sequenceCounter);
+        
+        oscClient.Send(message, client);
+    }
+
+    private void SendRTTRequest(SimpleClient client) {
+        client.HeartbeatTime = DateTime.Now;
+        SendRTTRequest(client.RTT.Ticks, ++client.SequenceCounter, client.UdpEndPoint);
+    }
     
     private void ReceiveJoin(OSCMessage message, IPEndPoint tcpEndPoint) {
         string deviceName = (string) message.Data[0];
@@ -93,10 +116,11 @@ public class GameNetwork {
 
         IPEndPoint udpEndpoint = new IPEndPoint(tcpEndPoint.Address, udpPort);
         SimpleClient client = new SimpleClient(deviceName, tcpEndPoint, udpEndpoint);
-
+        
         clients.Add(client);
         Console.WriteLine("Join Received: " + deviceName + " " + udpEndpoint);
         OnReceiveClient?.Invoke(client);
+        lock (client) SendRTTRequest(client);
     }
     
     private void ReceivePoints(OSCMessage message, IPEndPoint endPoint) {
@@ -106,7 +130,42 @@ public class GameNetwork {
 
     public void ReceiveKey(OSCMessage message, IPEndPoint endPoint) {
         //TODO check ob Client in Lobby. Vllt andere Stelle?
+        Console.WriteLine("Received Key");
         sc.Send(message, SUPERCOLLIDER_ENDPOINT);
     }
     
+    private void ReceiveRTTResponse(OSCMessage message, IPEndPoint endPoint) {
+        int sequenceCounter = (int)message.Data[0];
+        SimpleClient? client;
+        lock (clients) client = clients.Find(c => c.UdpEndPoint.Equals(endPoint));
+        if (client != null && sequenceCounter == client.SequenceCounter) {
+            DateTime current = DateTime.Now;
+            client.LastResponse = current;
+            TimeSpan rtt = current - client.HeartbeatTime;
+            client.RTT = rtt;
+        }
+    }
+    
+    private void CheckRTT() {
+        while (listening) {
+            DateTime current = DateTime.Now;
+
+            lock (clients) {
+                foreach (var client in clients) {
+                    lock (client) {
+                        if (current - client.LastResponse >= TIMEOUT) {
+                            server.Disconnect(client.TcpEndPoint);
+                            continue;
+                        }
+
+                        if (current - client.HeartbeatTime >= CHECK_TIME) {
+                            SendRTTRequest(client);
+                        }
+                    }
+                }
+            }
+
+            Thread.Sleep(1000);
+        }
+    }
 }

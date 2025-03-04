@@ -20,7 +20,7 @@ public class OscTcpServer {
     private readonly IPEndPoint localEndpoint;
     private IPEndPoint? boundAddress;
 
-    private Thread heartbeatThread;
+    //private Thread heartbeatThread;
 
     private List<OscTcpConnection> clients = new();
 
@@ -36,16 +36,16 @@ public class OscTcpServer {
         listener.Start();
         this.listening = true;
         boundAddress = (IPEndPoint?) listener.Server.LocalEndPoint;
-        heartbeatThread = new Thread(CheckHeartbeat);
-        heartbeatThread.Start();
+        // heartbeatThread = new Thread(CheckHeartbeat);
+        // heartbeatThread.Start();
         listener.BeginAcceptTcpClient(ConnectionRequestHandler, listener);
     }
 
     public void Stop() {
         listener.Stop();
         this.listening = false;
-        heartbeatThread.Interrupt();
-        heartbeatThread.Join();
+        /* heartbeatThread.Interrupt();
+         heartbeatThread.Join();*/
         List<OscTcpConnection> clientCopy;
 
         lock (clients) {
@@ -87,13 +87,20 @@ public class OscTcpServer {
         stream?.Write(messageAsBytes);
     }
 
+    public void Disconnect(IPEndPoint client) {
+        lock (clients) {
+            OscTcpConnection? tcpClient = clients.Find(c => Equals(c.client.Client.RemoteEndPoint, client));
+            tcpClient?.client.Close();
+        }
+    }
+
     public void ConnectionRequestHandler(IAsyncResult result) {
         listener.BeginAcceptTcpClient(ConnectionRequestHandler, listener);
         TcpClient client = listener.EndAcceptTcpClient(result);
         OscTcpConnection connection = new OscTcpConnection();
 
         connection.client = client;
-        connection.lastResponse = DateTime.Now;
+        //connection.lastResponse = DateTime.Now;
         connection.responseThread = new Thread(() => {
             try {
                 ReceiveMessage(connection);
@@ -130,61 +137,60 @@ public class OscTcpServer {
             int messageLength = BinaryPrimitives.ReadInt32BigEndian(messageLengthArr);
             Console.Write("Message length: " + messageLength);
             byte[] data = new byte[messageLength];
-            stream.Read(data, 0, messageLength);
+            int numBytes = stream.Read(data, 0, messageLength);
 
-            OSCMessage receivedMessage = (OSCMessage) OSCPacket.FromByteArray(data);
-            lock (connection) {
-                connection.lastResponse = DateTime.Now;
-                connection.heartbeatTime = DateTime.Now;
+            if (numBytes <= 0) {
+                connection.client.Close();
+                continue;
             }
+            
+            OSCMessage receivedMessage = (OSCMessage) OSCPacket.FromByteArray(data);
 
             Console.WriteLine("Received Message from: " + connection.client.Client.RemoteEndPoint);
             OnMessageReceived?.Invoke(receivedMessage, clientEndpoint!);
         }
     }
 
-    private void CheckHeartbeat() {
-        OSCMessage message = new OSCMessage("/heartbeat");
-        byte[] messageAsBytes = message.ToByteArray();
-        Span<byte> messageLength = stackalloc byte[sizeof(int)];
-        BinaryPrimitives.WriteInt32BigEndian(messageLength, messageAsBytes.Length);
+    /* private void CheckHeartbeat() {
+         OSCMessage message = new OSCMessage("/heartbeat");
+         byte[] messageAsBytes = message.ToByteArray();
+         Span<byte> messageLength = stackalloc byte[sizeof(int)];
+         BinaryPrimitives.WriteInt32BigEndian(messageLength, messageAsBytes.Length);
 
-        while (listening) {
-            List<OscTcpConnection> unavailableClients = new();
-            DateTime current = DateTime.Now;
+         while (listening) {
+             List<OscTcpConnection> unavailableClients = new();
+             DateTime current = DateTime.Now;
 
-            lock (clients) {
-                foreach (var connection in clients) {
-                    lock (connection) {
-                        if (current - connection.lastResponse >= TIMEOUT) {
-                            unavailableClients.Add(connection);
-                            continue;
-                        }
+             lock (clients) {
+                 foreach (var connection in clients) {
+                     lock (connection) {
+                         if (current - connection.lastResponse >= TIMEOUT) {
+                             unavailableClients.Add(connection);
+                             continue;
+                         }
 
-                        if (current - connection.heartbeatTime >= CHECK_TIME) {
-                            NetworkStream stream = connection.client.GetStream();
+                         if (current - connection.heartbeatTime >= CHECK_TIME) {
+                             NetworkStream stream = connection.client.GetStream();
 
-                            stream.Write(messageLength);
-                            stream.Write(messageAsBytes);
-                            connection.heartbeatTime = current;
-                        }
-                    }
-                }
+                             stream.Write(messageLength);
+                             stream.Write(messageAsBytes);
+                             connection.heartbeatTime = current;
+                         }
+                     }
+                 }
 
-                foreach (var unavailableClient in unavailableClients) {
-                    clients.Remove(unavailableClient);
-                }
-            }
+                 foreach (var unavailableClient in unavailableClients) {
+                     clients.Remove(unavailableClient);
+                 }
+             }
 
-            Thread.Sleep(1000);
-        }
-    }
+             Thread.Sleep(1000);
+         }
+     }*/
 
 
     private class OscTcpConnection {
         public TcpClient client;
-        public DateTime lastResponse; //Für Heartbeat
-        public DateTime heartbeatTime;
         public Thread responseThread;
 
         //Falls client.GetStream() Probleme bereitet dann NetworkStream hier Cachen 
