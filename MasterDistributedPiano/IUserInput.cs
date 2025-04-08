@@ -8,5 +8,4 @@ public interface IUserInput {
     event StartSignalHandler OnStartSignal;
     event MidiHandler OnMidiSend;
     event OctaveHandler OnOctaveConfig;
-    void UpdateScore(float score);
 }

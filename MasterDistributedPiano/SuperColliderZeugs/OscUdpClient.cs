@@ -55,11 +55,11 @@ public sealed class OscUdpClient {
         
         IPEndPoint? source = new IPEndPoint(IPAddress.Any, 0);
         byte[] receivedData = activeSocket.EndReceive(result, ref source);
+        
         if (source != null && receivedData.Length > 0) {
             OSCMessage message = (OSCMessage) OSCPacket.FromByteArray(receivedData);
             OnReceive?.Invoke(message, source);
         }
-        
         socket?.BeginReceive(OnUdpReceive, result.AsyncState);
     }
 }

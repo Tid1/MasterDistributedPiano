@@ -6,7 +6,6 @@ public class GameHandler {
     private GameNetwork network;
     private IUserInput ui;
     private List<SimpleClient> clients = new();
-    private float totalScore;
     
     public GameHandler(GameNetwork network, IUserInput ui) {
         this.network = network;
@@ -16,15 +15,9 @@ public class GameHandler {
 
     private void RegisterEvents() {
         network.OnReceiveClient += clients.Add;
-        network.OnReceiveScore += AddToScore;
         ui.OnStartSignal += network.SendStartMusic;
         ui.OnMidiSend += ParseMidiToByteArray;
         ui.OnOctaveConfig += SendOctaveConfig;
-    }
-
-    private void AddToScore(float receivedScore) {
-        totalScore += receivedScore;
-        ui.UpdateScore(totalScore);
     }
 
     private void ParseMidiToByteArray(string pathToMidi, string fileName = "midiFile") {

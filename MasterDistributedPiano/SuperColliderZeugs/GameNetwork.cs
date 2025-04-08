@@ -11,7 +11,6 @@ public delegate void ScoreHandler(float score);
 
 public class GameNetwork {
     public event ReceiveClientHandler OnReceiveClient;
-    public event ScoreHandler OnReceiveScore;
 
     private List<SimpleClient> clients = new();
     private static readonly IPEndPoint SUPERCOLLIDER_ENDPOINT = new IPEndPoint(IPAddress.Loopback, 57120); //25440
@@ -20,7 +19,9 @@ public class GameNetwork {
     private readonly OscUdpClient oscClient = new OscUdpClient(IPAddress.Any, true);
     private readonly OscUdpClient sc = new OscUdpClient(IPAddress.Loopback);
     private readonly OscTcpServer server = new OscTcpServer(IPAddress.Any);
+    
     private readonly Dictionary<string, Action<OSCMessage, IPEndPoint>> routes = new();
+    
     private readonly string lobbyName;
 
     private volatile bool listening;
@@ -32,11 +33,12 @@ public class GameNetwork {
     public GameNetwork(string lobbyName) {
         this.lobbyName = lobbyName;
         SetUpSockets();
+        
         routes.Add("/keyOn", ReceiveKey);
         routes.Add("/keyOff", ReceiveKey);
         routes.Add("/join", ReceiveJoin);
-        routes.Add("/point", ReceivePoints);
         routes.Add("/rtt/response", ReceiveRTTResponse);
+        
         /*
         routes.Add("/start", ReceiveStartMusic);
         routes.Add("/config", ReceiveOctaveConfig);
@@ -63,7 +65,7 @@ public class GameNetwork {
         OSCMessage message = new OSCMessage("/discovery/promotion");
         
         message.Append(oscClient.BoundPort);
-        message.Append(server.BoundPort); //TODO in Unity einfügen damit richtig gelesen wird
+        message.Append(server.BoundPort);
         message.Append(lobbyName);
 
         return message;
@@ -85,7 +87,6 @@ public class GameNetwork {
     
     public void SendStartMusic() {
         OSCMessage message = new OSCMessage("/start");
-        
         server.Send(message);
     }
 
@@ -122,14 +123,8 @@ public class GameNetwork {
         OnReceiveClient?.Invoke(client);
         lock (client) SendRTTRequest(client);
     }
-    
-    private void ReceivePoints(OSCMessage message, IPEndPoint endPoint) {
-        float score = (float) message.Data[0];
-        OnReceiveScore?.Invoke(score);
-    }
 
     public void ReceiveKey(OSCMessage message, IPEndPoint endPoint) {
-        //TODO check ob Client in Lobby. Vllt andere Stelle?
         Console.WriteLine("Received Key");
         sc.Send(message, SUPERCOLLIDER_ENDPOINT);
     }

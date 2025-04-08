@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Sockets;
 using OSCData;
 
-//TODO Heartbeat implementieren auf Clientseite maybe?
 public class OscTcpServer {
     public event Action OnStopListening;
     public event Action<OSCMessage, IPEndPoint> OnMessageReceived;
@@ -93,14 +92,14 @@ public class OscTcpServer {
             tcpClient?.client.Close();
         }
     }
-
+    //Falls client.GetStream() Probleme bereitet dann NetworkStream hier Cachen 
+    
     public void ConnectionRequestHandler(IAsyncResult result) {
         listener.BeginAcceptTcpClient(ConnectionRequestHandler, listener);
         TcpClient client = listener.EndAcceptTcpClient(result);
         OscTcpConnection connection = new OscTcpConnection();
 
         connection.client = client;
-        //connection.lastResponse = DateTime.Now;
         connection.responseThread = new Thread(() => {
             try {
                 ReceiveMessage(connection);
@@ -119,8 +118,6 @@ public class OscTcpServer {
         }
 
         Console.WriteLine("Client added from Endpoint: " + client.Client.RemoteEndPoint);
-
-        //OnConnectionRequest?.Invoke(new OscTcpClient(client));
     }
 
     private void ReceiveMessage(OscTcpConnection connection) {
@@ -188,11 +185,12 @@ public class OscTcpServer {
          }
      }*/
 
-
+    
+    //Falls client.GetStream() Probleme bereitet dann NetworkStream hier Cachen 
     private class OscTcpConnection {
         public TcpClient client;
         public Thread responseThread;
 
-        //Falls client.GetStream() Probleme bereitet dann NetworkStream hier Cachen 
+    
     }
 }

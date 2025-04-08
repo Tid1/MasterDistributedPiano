@@ -41,7 +41,6 @@ public sealed class OscDiscoveryClient {
                 UdpClient? active = socket;
                 if (active == null) break;
                 active.Send(discoveryInfo, discoveryInfo.Length, DISCOVERY_ENDPOINT);
-                //Console.WriteLine("Ping!");
                 Thread.Sleep(1000);
             }
         } catch(Exception e) {
