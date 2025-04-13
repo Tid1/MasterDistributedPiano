@@ -54,8 +54,7 @@ public class CommandLineInterface : IUserInput {
                     break;
                 case "midi":
                     if (parsedInputArr.Length == 2) {
-                        string basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\"));
-                        string midiFolder = Path.Combine(basePath, "MasterDistributedPiano", "MIDIFiles");
+                        string midiFolder = FindMidiFolder();
                         string pathToFile = Path.Combine(midiFolder, parsedInputArr[1]);
                         OnMidiSend?.Invoke(pathToFile);
                         Console.Write("Sending Midi...");
@@ -63,8 +62,7 @@ public class CommandLineInterface : IUserInput {
                     }
 
                     if (parsedInputArr.Length == 3) {
-                        string basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\"));
-                        string midiFolder = Path.Combine(basePath, "MasterDistributedPiano", "MIDIFiles");
+                        string midiFolder = FindMidiFolder();
                         string pathToFile = Path.Combine(midiFolder, parsedInputArr[1]);
                         OnMidiSend?.Invoke(pathToFile, parsedInputArr[2]);
                         Console.Write("Sending Midi...");
@@ -79,6 +77,23 @@ public class CommandLineInterface : IUserInput {
             Console.WriteLine("Error: "  + e.Message);
         }
     }
+    
+    public static string FindMidiFolder()
+    {
+        string current = AppContext.BaseDirectory;
+
+        while (!string.IsNullOrEmpty(current))
+        {
+            string candidate = Path.Combine(current, "MIDIFiles");
+            if (Directory.Exists(candidate))
+                return candidate;
+
+            current = Directory.GetParent(current)?.FullName;
+        }
+
+        throw new DirectoryNotFoundException("Could not find 'MIDIFiles' directory.");
+    }
+
 
     public void UpdateScore(float score) {
         throw new NotImplementedException();
