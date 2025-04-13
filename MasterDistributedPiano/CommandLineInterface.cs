@@ -54,13 +54,19 @@ public class CommandLineInterface : IUserInput {
                     break;
                 case "midi":
                     if (parsedInputArr.Length == 2) {
-                        OnMidiSend?.Invoke("D:\\RiderProjects\\MasterDistributedPiano\\MasterDistributedPiano\\MIDIFiles\\" + parsedInputArr[1]);
+                        string basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\"));
+                        string midiFolder = Path.Combine(basePath, "MasterDistributedPiano", "MIDIFiles");
+                        string pathToFile = Path.Combine(midiFolder, parsedInputArr[1]);
+                        OnMidiSend?.Invoke(pathToFile);
                         Console.Write("Sending Midi...");
                         break;
                     }
 
                     if (parsedInputArr.Length == 3) {
-                        OnMidiSend?.Invoke("D:\\RiderProjects\\MasterDistributedPiano\\MasterDistributedPiano\\MIDIFiles\\" + parsedInputArr[1], parsedInputArr[2]);
+                        string basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, @"..\..\..\..\"));
+                        string midiFolder = Path.Combine(basePath, "MasterDistributedPiano", "MIDIFiles");
+                        string pathToFile = Path.Combine(midiFolder, parsedInputArr[1]);
+                        OnMidiSend?.Invoke(pathToFile, parsedInputArr[2]);
                         Console.Write("Sending Midi...");
                         break;
                     }
